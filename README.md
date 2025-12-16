@@ -34,8 +34,13 @@ node multi_server_mcp_client.js
 ```sh
 npx @modelcontextprotocol/inspector node math_server.js
 ```
+#### Once the UI opens:
 
-You can now click on "Connect" and test out the math MCP server!
+1. Select the "Transport Type" as "STDIO"
+2. Set the "Command" to be "node"
+3. Set the "Arguments" to be "math_server.js"
+4. Finally, you can now click on "Connect" and test out the math MCP server!
+
 
 ### Weather server:
 First run on one terminal:
