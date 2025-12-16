@@ -25,7 +25,6 @@ const server = new Server(
     }
 );
 
-// ... (Your ListToolsRequestSchema and CallToolRequestSchema handlers remain exactly the same) ...
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
         tools: [{
@@ -52,7 +51,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     throw new Error(`Unknown tool: ${request.params.name}`);
 });
 
-// --- THIS IS THE FIXED PART ---
 
 let transport; // In a real app, you'd map this to session IDs
 

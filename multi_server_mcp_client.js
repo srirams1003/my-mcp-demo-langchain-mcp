@@ -1,6 +1,5 @@
 import { MultiServerMCPClient } from "@langchain/mcp-adapters";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-// CHANGE 1: Import Google instead of Anthropic
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -29,7 +28,7 @@ async function main() {
         const tools = await client.getTools();
         console.log(`Connected! Found ${tools.length} tools:`, tools.map(t => t.name).join(", "));
 
-        // CHANGE 2: Create a Gemini Agent
+		// create a Gemini agent
         const agent = createReactAgent({
             llm: new ChatGoogleGenerativeAI({
                 model: "gemini-2.5-flash", // "flash" is fast and free-tier eligible
@@ -43,7 +42,6 @@ async function main() {
         const mathResponse = await agent.invoke({
             messages: [{ role: "user", content: "what's (3 + 5) x 12?" }],
         });
-        // Gemini's response structure is slightly different, but LangGraph handles it.
         // We look at the last message content.
         console.log("Agent:", mathResponse.messages[mathResponse.messages.length - 1].content);
 
