@@ -1,61 +1,95 @@
 import { MultiServerMCPClient } from "@langchain/mcp-adapters";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
+import { ChatVertexAI } from "@langchain/google-vertexai";
 import path from "path";
 import { fileURLToPath } from "url";
-import 'dotenv/config';
+// import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
-    const mathServerPath = path.resolve(__dirname, "math_server.js");
+	const mathServerPath = path.resolve(__dirname, "math_server.js");
 
-    const client = new MultiServerMCPClient({
-        math: {
-            transport: "stdio",
-            command: "node",
-            args: [mathServerPath], 
-        },
-        weather: {
-            transport: "sse",
-            url: "http://localhost:8000/mcp",
-        },
-    });
+	const client = new MultiServerMCPClient({
+		math: {
+			transport: "stdio",
+			command: "node",
+			args: [mathServerPath], 
+		},
+		weather: {
+			transport: "sse",
+			url: "http://localhost:8000/mcp",
+		},
+	});
 
-    try {
-        console.log("Connecting to MCP servers...");
-        const tools = await client.getTools();
-        console.log(`Connected! Found ${tools.length} tools:`, tools.map(t => t.name).join(", "));
+	try {
+		console.log("Connecting to MCP servers...");
+		const tools = await client.getTools();
+		console.log(`Connected! Found ${tools.length} tools.`);
 
-		// create a Gemini agent
-        const agent = createReactAgent({
-            llm: new ChatGoogleGenerativeAI({
-                model: "gemini-2.5-flash", // "flash" is fast and free-tier eligible
-                apiKey: process.env.GOOGLE_API_KEY,
-                temperature: 0
-            }),
-            tools,
-        });
+		// create a Gemini agent using your GCP Vertex AI (ADC)
+		const agent = createReactAgent({
+			llm: new ChatVertexAI({
+				model: "gemini-2.5-flash", // Use 1.5-flash as it's the stable workhorse for agents
 
-        console.log("\n--- Testing Math Agent ---");
-        const mathResponse = await agent.invoke({
-            messages: [{ role: "user", content: "what's (3 + 5) x 12?" }],
-        });
-        // We look at the last message content.
-        console.log("Agent:", mathResponse.messages[mathResponse.messages.length - 1].content);
+				// Passing these explicitly ensures the backend switches to Vertex
+				vertexai: true,
+				project: "fluid-stratum-481605-m8",
+				location: "us-central1",
 
-        console.log("\n--- Testing Weather Agent ---");
-        const weatherResponse = await agent.invoke({
-            messages: [{ role: "user", content: "what is the weather in nyc?" }],
-        });
-        console.log("Agent:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
+				temperature: 0
+			}),
+			tools,
+		});
 
-    } catch (error) {
-        console.error("Error running agent:", error);
-    } finally {
-        await client.close();
-    }
+		console.log("\n--- Testing Math Agent ---");
+		const mathResponse = await agent.invoke({
+			messages: [{ role: "user", content: "what's (3 + 5) x 12?" }],
+		});
+
+		// Loop through all messages to see the "hidden" tool steps
+		mathResponse.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name}`);
+					console.log(`           Arguments:`, tc.args);
+				});
+			} else if (msg.role === "tool") {
+				console.log(`[Step ${index}] ✅ Tool Result:`, msg.content);
+			}
+		});
+
+		// Final Answer
+		console.log("Final Agent Answer:", mathResponse.messages[mathResponse.messages.length - 1].content);
+
+		console.log("\n--- Testing Weather Agent ---");
+		const weatherResponse = await agent.invoke({
+			messages: [{ role: "user", content: "what is the weather in nyc?" }],
+		});
+		// Loop through all messages to see the "hidden" tool steps
+		weatherResponse.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name}`);
+					console.log(`           Arguments:`, tc.args);
+				});
+			} else if (msg.role === "tool") {
+				console.log(`[Step ${index}] ✅ Tool Result:`, msg.content);
+			}
+		});
+
+		// Final Answer
+		console.log("Final Agent Answer:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
+
+
+	} catch (error) {
+		// Detailed error logging to see if it's still an auth issue
+		console.error("Error running agent:", error);
+	} finally {
+		await client.close();
+	}
 }
 
 main();
