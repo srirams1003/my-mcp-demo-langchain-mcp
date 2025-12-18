@@ -47,13 +47,15 @@ async function main() {
 
 		// Loop through all messages to see the "hidden" tool steps
 		mathResponse.messages.forEach((msg, index) => {
+			// This catches Steps 1 and 3 (The Agent's intent)
 			if (msg.tool_calls && msg.tool_calls.length > 0) {
 				msg.tool_calls.forEach(tc => {
-					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name}`);
-					console.log(`           Arguments:`, tc.args);
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
 				});
-			} else if (msg.role === "tool") {
-				console.log(`[Step ${index}] ✅ Tool Result:`, msg.content);
+			} 
+			// This catches Steps 2 and 4 (Your MCP Server's output)
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
 			}
 		});
 
@@ -66,13 +68,15 @@ async function main() {
 		});
 		// Loop through all messages to see the "hidden" tool steps
 		weatherResponse.messages.forEach((msg, index) => {
+			// This catches Steps 1 and 3 (The Agent's intent)
 			if (msg.tool_calls && msg.tool_calls.length > 0) {
 				msg.tool_calls.forEach(tc => {
-					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name}`);
-					console.log(`           Arguments:`, tc.args);
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
 				});
-			} else if (msg.role === "tool") {
-				console.log(`[Step ${index}] ✅ Tool Result:`, msg.content);
+			} 
+			// This catches Steps 2 and 4 (Your MCP Server's output)
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
 			}
 		});
 
