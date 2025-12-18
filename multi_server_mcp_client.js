@@ -1,10 +1,8 @@
 import { MultiServerMCPClient } from "@langchain/mcp-adapters";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-// import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import path from "path";
 import { fileURLToPath } from "url";
-// import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,9 +30,7 @@ async function main() {
 		// create a Gemini agent using your GCP Vertex AI (ADC)
 		const agent = createReactAgent({
 			llm: new ChatVertexAI({
-				model: "gemini-2.5-flash", // Use 1.5-flash as it's the stable workhorse for agents
-
-				// Passing these explicitly ensures the backend switches to Vertex
+				model: "gemini-2.5-flash",
 				vertexai: true,
 				project: "fluid-stratum-481605-m8",
 				location: "us-central1",
