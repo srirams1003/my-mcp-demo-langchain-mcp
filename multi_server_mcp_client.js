@@ -18,9 +18,14 @@ async function main() {
 			command: "node",
 			args: [mathServerPath], 
 		},
+        // weather: {
+        //     transport: "sse",
+        //     url: "http://localhost:8000/mcp",
+        // },
 		weather: {
-			transport: "sse",
-			url: "http://localhost:8000/mcp",
+			transport: "stdio",
+			command: "node",
+			args: ["/Users/sriramsuresh/terralogic/my-mcp-demo-modelcontextprotocol.io-typescript/build/index.js"],
 		},
 		memory: {
 			transport: "stdio",
@@ -45,7 +50,14 @@ async function main() {
 				temperature: 0
 			}),
 			tools,
-		});
+			stateModifier: `You are a helpful AI assistant with access to a Long-Term Memory.
+
+			RULES FOR MEMORY:
+			1. If the user tells you a fact, use 'remember_fact' to save it.
+			2. If you find CONFLICTING memories (e.g. "Favorite animal is dog" vs "cat"), trust the entry with the MOST RECENT timestamp.
+            3. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
+			4. Do not ask the user for information you already have.`,
+        });
 
 		console.log("\n--- Testing Math Agent ---");
 		const mathResponse = await agent.invoke({
@@ -71,7 +83,7 @@ async function main() {
 
 		console.log("\n--- Testing Weather Agent ---");
 		const weatherResponse = await agent.invoke({
-			messages: [{ role: "user", content: "what is the weather in nyc?" }],
+			messages: [{ role: "user", content: "what is the weather in New York City, NY?" }],
 		});
 		// Loop through all messages to see the "hidden" tool steps
 		weatherResponse.messages.forEach((msg, index) => {
@@ -90,9 +102,9 @@ async function main() {
 		// Final Answer
 		console.log("Final Agent Answer:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
 
-		console.log("\n--- Testing Memory Agent ---");
+		console.log("\n--- Testing Memory Agent Store ---");
 		const memoryResponse1 = await agent.invoke({
-			messages: [{ role: "user", content: "remember that my favorite color is blue" }],
+			messages: [{ role: "user", content: "remember that my favorite color is crimson" }],
 		});
 		memoryResponse1.messages.forEach((msg, index) => {
 			if (msg.tool_calls && msg.tool_calls.length > 0) {
@@ -106,6 +118,7 @@ async function main() {
 		});
 		console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
 
+		console.log("\n--- Testing Memory Agent Recall ---");
 		const memoryResponse2 = await agent.invoke({
 			messages: [{ role: "user", content: "what is my favorite color?" }],
 		});
@@ -123,7 +136,6 @@ async function main() {
 
 
 	} catch (error) {
-		// Detailed error logging to see if it's still an auth issue
 		console.error("Error running agent:", error);
 	} finally {
 		await client.close();
