@@ -2,6 +2,8 @@ import { MultiServerMCPClient } from "@langchain/mcp-adapters";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import { MemorySaver } from "@langchain/langgraph-checkpoint"; // <--- 1. Import Memory
+import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
+import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as readline from "node:readline/promises";
@@ -31,8 +33,11 @@ async function main() {
         const tools = await client.getTools();
         console.log(`Connected! Found ${tools.length} tools.`);
 
-        // 2. Initialize the Checkpointer (In-Memory Database)
-        const checkpointer = new MemorySaver();
+        // // 2. Initialize the Checkpointer (In-Memory Database) - short term memory
+        // const checkpointer = new MemorySaver();
+		// 2. Create a file called 'memory.db' on your hard drive for long-term memory
+		const db = new Database("memory.db");
+		const checkpointer = new SqliteSaver(db);
 
         // Create the Agent with Memory
         const agent = createReactAgent({
@@ -59,7 +64,7 @@ async function main() {
 
         while (true) {
             const userQuery = await rl.question("\nYou: ");
-            if (userQuery.toLowerCase() === "exit") break;
+            if (userQuery.toLowerCase() === "exit" || userQuery.toLowerCase() === "quit") break;
 
             // We use .stream() to see the thinking process in real-time
             const stream = await agent.stream(
