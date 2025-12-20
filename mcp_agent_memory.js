@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 
 async function main() {
     const mathServerPath = path.resolve(__dirname, "math_server.js");
+	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
 
     // Initialize MCP Client
     const client = new MultiServerMCPClient({
@@ -26,6 +27,11 @@ async function main() {
             transport: "sse",
             url: "http://localhost:8000/mcp",
         },
+		memory: {
+            transport: "stdio",
+            command: "node",
+            args: [memoryServerPath],
+        }
     });
 
     try {
@@ -50,6 +56,13 @@ async function main() {
             }),
             tools,
             checkpointSaver: checkpointer, // <--- 3. Inject Memory Here
+			// System Prompt to teach the Agent about Memory
+            stateModifier: `You are a helpful AI assistant with access to a Long-Term Memory.
+            
+            RULES FOR MEMORY:
+            1. If the user tells you a fact about themselves (name, location, job), use the 'remember_fact' tool to save it.
+            2. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
+            3. Do not ask the user for information you already have in memory.`
         });
 
         // 4. Interactive Chat Loop
