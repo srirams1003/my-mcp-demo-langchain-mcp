@@ -23,10 +23,15 @@ async function main() {
             command: "node",
             args: [mathServerPath], 
         },
-        weather: {
-            transport: "sse",
-            url: "http://localhost:8000/mcp",
-        },
+        // weather: {
+        //     transport: "sse",
+        //     url: "http://localhost:8000/mcp",
+        // },
+		weather: {
+			transport: "stdio",
+			command: "node",
+			args: ["/Users/sriramsuresh/terralogic/my-mcp-demo-modelcontextprotocol.io-typescript/build/index.js"],
+		},
 		memory: {
             transport: "stdio",
             command: "node",
