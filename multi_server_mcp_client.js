@@ -10,6 +10,8 @@ const __dirname = path.dirname(__filename);
 async function main() {
 	const mathServerPath = path.resolve(__dirname, "math_server.js");
 
+	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
+
 	const client = new MultiServerMCPClient({
 		math: {
 			transport: "stdio",
@@ -19,6 +21,11 @@ async function main() {
 		weather: {
 			transport: "sse",
 			url: "http://localhost:8000/mcp",
+		},
+		memory: {
+			transport: "stdio",
+			command: "node",
+			args: [memoryServerPath],
 		},
 	});
 
@@ -82,6 +89,37 @@ async function main() {
 
 		// Final Answer
 		console.log("Final Agent Answer:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
+
+		console.log("\n--- Testing Memory Agent ---");
+		const memoryResponse1 = await agent.invoke({
+			messages: [{ role: "user", content: "remember that my favorite color is blue" }],
+		});
+		memoryResponse1.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+				});
+			} 
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+			}
+		});
+		console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
+
+		const memoryResponse2 = await agent.invoke({
+			messages: [{ role: "user", content: "what is my favorite color?" }],
+		});
+		memoryResponse2.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+				});
+			} 
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+			}
+		});
+		console.log("Final Agent Answer:", memoryResponse2.messages[memoryResponse2.messages.length - 1].content);
 
 
 	} catch (error) {
