@@ -68,7 +68,8 @@ async function main() {
 			1. If the user tells you a fact, use 'remember_fact' to save it.
 			2. If you find CONFLICTING memories (e.g. "Favorite animal is dog" vs "cat"), trust the entry with the MOST RECENT timestamp.
             3. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
-			4. Do not ask the user for information you already have.`,
+			4. Do not ask the user for information you already have.
+			5. CRITICAL: If the 'recall_facts' tool returns information that CONFLICTS with earlier parts of this conversation, TRUST THE TOOL. The tool contains the most up-to-date truth, even if I said something different earlier in this chat.`,
         });
 
         // 4. Interactive Chat Loop
