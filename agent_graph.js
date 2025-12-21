@@ -13,20 +13,34 @@ const mathServerPath = path.resolve(__dirname, "math_server.js");
 const memoryServerPath = path.resolve(__dirname, "memory_server.js");
 const weatherServerPath = path.resolve("/Users/sriramsuresh/terralogic/my-mcp-demo-modelcontextprotocol.io-typescript/build/index.js");
 
-// 2. Initialize Client (Top-Level Code)
+// 2. Initialize Client
 const client = new MultiServerMCPClient({
-    math: { transport: "stdio", command: "node", args: [mathServerPath] },
-    weather: { transport: "stdio", command: "node", args: [weatherServerPath] },
-    memory: { transport: "stdio", command: "node", args: [memoryServerPath] }
+    math: { 
+        transport: "stdio", 
+        command: "node", 
+        args: ["--no-webstorage", mathServerPath] // Added flag to reduce noise
+    },
+    weather: { 
+        transport: "stdio", 
+        command: "node", 
+        args: ["--no-webstorage", weatherServerPath] 
+    },
+    memory: { 
+        transport: "stdio", 
+        command: "node", 
+        args: ["--no-webstorage", memoryServerPath] 
+    }
 });
 
-// 3. Await Tools (This works in modern Node.js)
+// 3. TOP-LEVEL AWAIT
+// This connects to the servers immediately when the file loads.
 const tools = await client.getTools();
 
 // 4. Initialize Memory
 const checkpointer = new MemorySaver();
 
 // 5. Create and Export the Graph DIRECTLY
+// Note: We export 'graph', not a function.
 export const graph = createReactAgent({
     llm: new ChatVertexAI({
         model: "gemini-2.5-flash",

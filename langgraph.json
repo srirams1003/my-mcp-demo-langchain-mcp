@@ -1,7 +1,7 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "mcp_agent": "./agent_graph.js:graph" 
+    "mcp_agent": "./agent_graph.js:graph"
   },
   "env": ".env"
 }
