@@ -82,6 +82,15 @@ This script starts an MCP server that provides a `get_weather` tool. The server 
 node weather_server.js
 ```
 
+### `concatenate_string_mcp_server.js`
+
+This script starts an MCP server that provides a `concatenate_two_strings` tool. The server runs on `http://localhost:3000` and it uses the "Streamable HTTP" transport method. This is a more robust alternative to the SSE transport method (which is now considered legacy by many devs) as it uses a single POST endpoint for the entire session.
+
+**To run:**
+```sh
+node concatenate_string_mcp_server.js
+```
+
 ### `agent_graph.js`
 
 This script defines a LangGraph agent that connects to the `math`, `weather`, and `memory` servers. This is the entry point for Langsmith Studio integration.
