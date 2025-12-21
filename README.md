@@ -90,6 +90,12 @@ This script defines a LangGraph agent that connects to the `math`, `weather`, an
 
 Langsmith Studio allows you to debug, trace, and visualize your LangGraph agents. To use it with this project, you can use the `langgraphjs dev` command.
 
+0. **Install the `langgraphjs` CLI tool globally**
+    ```sh
+    npm install -g @langchain/langgraph-cli
+
+    ```
+
 1.  **Start the LangGraph development server:**
     ```sh
     langgraphjs dev
