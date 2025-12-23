@@ -4,8 +4,5 @@ node_modules
 memory.db
 brain.json
 .vectra
-old_env
-
-# LangGraph API
 .langgraph_api
 studio_memory.db
