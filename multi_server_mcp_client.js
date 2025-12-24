@@ -15,16 +15,14 @@ async function main() {
 	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
 	const weatherServerPath = path.resolve(__dirname, "typescript-weather-mcp-server/build/index.js");
 
+	const ragServerPath = path.resolve(__dirname, "rag_server.py");
+
 	const client = new MultiServerMCPClient({
 		math: {
 			transport: "stdio",
 			command: "node",
 			args: [mathServerPath], 
 		},
-		// weather: {
-		//     transport: "sse",
-		//     url: "http://localhost:8000/mcp",
-		// },
 		weather: {
 			transport: "stdio",
 			command: "node",
@@ -35,48 +33,16 @@ async function main() {
 			command: "node",
 			args: [memoryServerPath],
 		},
-	});
-
-	// --- Custom RAG Tool ---
-	const ragToolDefinitionPath = path.resolve(__dirname, "rag_mcp_tool.json");
-	const ragToolJson = JSON.parse(await fs.readFile(ragToolDefinitionPath, "utf-8"));
-	const ragRetrieverDefinition = ragToolJson.rag_retriever;
-	const retrieveFunctionDefinition = ragRetrieverDefinition.functions.retrieve;
-
-	const ragRetrieve = async ({ query, k }) => {
-		const response = await fetch(retrieveFunctionDefinition.url, {
-			method: retrieveFunctionDefinition.method,
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ query, k }),
-		});
-		if (!response.ok) {
-			throw new Error(`RAG server error: ${response.statusText}`);
-		}
-		const data = await response.json();
-		return JSON.stringify(data.results);
-	};
-
-	const ragTool = new DynamicStructuredTool({ // Changed to DynamicStructuredTool
-		name: "rag_retriever",
-		description: ragRetrieverDefinition.description,
-		schema: {
-			type: "object",
-			properties: {
-				query: { type: "string", description: "The query string to search for in the knowledge base." },
-				k: { type: "number", description: "The number of top relevant chunks to retrieve. Defaults to 4." },
-			},
-			required: ["query"],
+		rag: {
+			transport: "stdio",
+			command: "bash",
+			args: ["-c", `source mcp-rag-env/bin/activate && python "${ragServerPath}"`],
 		},
-		func: ragRetrieve,
 	});
-	// --- End Custom RAG Tool ---
 
 	try {
 		console.log("Connecting to MCP servers...");
 		const tools = await client.getTools();
-		tools.push(ragTool); // Add the custom RAG tool to the list
 		console.log(`Connected! Found ${tools.length} tools.`);
 
 		// create a Gemini agent using your GCP Vertex AI (ADC)
