@@ -1,11 +1,12 @@
 .DS_Store
 node_modules
+mcp-rag-env/
+__pycache__
 .env
+nohup.out
 memory.db
 brain.json
 .vectra
-old_env
-
-# LangGraph API
+.venv*
 .langgraph_api
 studio_memory.db

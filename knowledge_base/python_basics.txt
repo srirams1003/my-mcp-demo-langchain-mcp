@@ -1,0 +1,38 @@
+Python is a high-level, interpreted, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation.
+
+Key features of Python:
+- Easy to learn and use
+- Free and open-source
+- High-level language
+- Interpreted language
+- Dynamically typed
+- Object-oriented language
+- Extensible
+- Large standard library
+- Supports GUI programming
+
+Variables in Python are used to store data values. Unlike other programming languages, Python has no command for declaring a variable. A variable is created the moment you first assign a value to it.
+
+Example:
+x = 10
+name = "Alice"
+
+Data types in Python:
+- Numeric: int, float, complex
+- Sequence: list, tuple, range
+- Text: str
+- Mapping: dict
+- Set: set, frozenset
+- Boolean: bool
+- Binary: bytes, bytearray, memoryview
+
+Functions are blocks of organized, reusable code that perform a single, related action. Functions provide better modularity for your application and a high degree of code reusing.
+
+Example of a function:
+def greet(name):
+    return "Hello, " + name
+
+Control flow statements:
+- if/elif/else: Conditional execution
+- for loop: Iterating over a sequence
+- while loop: Repeating as long as a condition is true

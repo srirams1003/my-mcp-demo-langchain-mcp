@@ -1,0 +1,26 @@
+{
+    "rag_retriever": {
+        "description": "Retrieves relevant chunks from the knowledge base based on a query.",
+        "functions": {
+            "retrieve": {
+                "url": "http://localhost:8001/retrieve",
+                "method": "POST",
+                "description": "Searches the knowledge base for relevant information.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The query string to search for in the knowledge base."
+                        },
+                        "k": {
+                            "type": "integer",
+                            "description": "The number of top relevant chunks to retrieve. Defaults to 4."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        }
+    }
+}

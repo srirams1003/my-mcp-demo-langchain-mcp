@@ -3,14 +3,19 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises"; // Added for file system operations
+import { z } from "zod"; // Added for schema definition
+import { Tool, DynamicStructuredTool } from "@langchain/core/tools"; // Updated: Added DynamicStructuredTool
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
 	const mathServerPath = path.resolve(__dirname, "math_server.js");
-
 	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
+	const weatherServerPath = path.resolve(__dirname, "typescript-weather-mcp-server/build/index.js");
+
+	const ragServerPath = path.resolve(__dirname, "rag_server.py");
 
 	const client = new MultiServerMCPClient({
 		math: {
@@ -18,19 +23,20 @@ async function main() {
 			command: "node",
 			args: [mathServerPath], 
 		},
-        // weather: {
-        //     transport: "sse",
-        //     url: "http://localhost:8000/mcp",
-        // },
 		weather: {
 			transport: "stdio",
 			command: "node",
-			args: ["/Users/sriramsuresh/terralogic/my-mcp-demo-modelcontextprotocol.io-typescript/build/index.js"],
+			args: [weatherServerPath],
 		},
 		memory: {
 			transport: "stdio",
 			command: "node",
 			args: [memoryServerPath],
+		},
+		rag: {
+			transport: "stdio",
+			command: "bash",
+			args: ["-c", `source mcp-rag-env/bin/activate && python "${ragServerPath}"`],
 		},
 	});
 
@@ -52,13 +58,13 @@ async function main() {
 			tools,
 			stateModifier: `You are a helpful AI assistant with access to a Long-Term Memory.
 
-			RULES FOR MEMORY:
-			1. If the user tells you a fact, use 'remember_fact' to save it.
-			2. If you find CONFLICTING memories (e.g. "Favorite animal is dog" vs "cat"), trust the entry with the MOST RECENT timestamp.
-            3. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
-			4. Do not ask the user for information you already have.
-			5. CRITICAL: If the 'recall_facts' tool returns information that CONFLICTS with earlier parts of this conversation, TRUST THE TOOL. The tool contains the most up-to-date truth, even if I said something different earlier in this chat.`,
-        });
+RULES FOR MEMORY:
+1. If the user tells you a fact, use 'remember_fact' to save it.
+2. If you find CONFLICTING memories (e.g. "Favorite animal is dog" vs "cat"), trust the entry with the MOST RECENT timestamp.
+3. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
+4. Do not ask the user for information you already have.
+5. CRITICAL: If the 'recall_facts' tool returns information that CONFLICTS with earlier parts of this conversation, TRUST THE TOOL. The tool contains the most up-to-date truth, even if I said something different earlier in this chat.`,
+		});
 
 		console.log("\n--- Testing Math Agent ---");
 		const mathResponse = await agent.invoke({
@@ -103,11 +109,27 @@ async function main() {
 		// Final Answer
 		console.log("Final Agent Answer:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
 
-		console.log("\n--- Testing Memory Agent Store ---");
-		const memoryResponse1 = await agent.invoke({
-			messages: [{ role: "user", content: "remember that my favorite color is crimson" }],
+		// console.log("\n--- Testing Memory Agent Store ---");
+		// const memoryResponse1 = await agent.invoke({
+		// 	messages: [{ role: "user", content: "remember that my favorite color is crimson" }],
+		// });
+		// memoryResponse1.messages.forEach((msg, index) => {
+		// 	if (msg.tool_calls && msg.tool_calls.length > 0) {
+		// 		msg.tool_calls.forEach(tc => {
+		// 			console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+		// 		});
+		// 	} 
+		// 	else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+		// 		console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+		// 	}
+		// });
+		// console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
+
+		console.log("\n--- Testing RAG Agent ---");
+		const ragResponse = await agent.invoke({
+			messages: [{ role: "user", content: "What are programming concepts?" }],
 		});
-		memoryResponse1.messages.forEach((msg, index) => {
+		ragResponse.messages.forEach((msg, index) => {
 			if (msg.tool_calls && msg.tool_calls.length > 0) {
 				msg.tool_calls.forEach(tc => {
 					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
@@ -117,7 +139,7 @@ async function main() {
 				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
 			}
 		});
-		console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
+		console.log("Final Agent Answer:", ragResponse.messages[ragResponse.messages.length - 1].content);
 
 		console.log("\n--- Testing Memory Agent Recall ---");
 		const memoryResponse2 = await agent.invoke({

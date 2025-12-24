@@ -1,0 +1,17 @@
+Object-Oriented Programming (OOP) is a programming paradigm based on the concept of "objects", which can contain data and code: data in the form of fields (often known as attributes or properties), and code, in the form of procedures (often known as methods).
+
+Key concepts of OOP include:
+1. Encapsulation: Bundling data and methods that operate on the data within one unit (e.g., a class).
+2. Inheritance: A mechanism where a new class (subclass) is derived from an existing class (superclass). The subclass inherits attributes and methods from the superclass.
+3. Polymorphism: The ability of an object to take on many forms. The most common use of polymorphism in OOP occurs when a parent class reference is used to refer to a child class object.
+4. Abstraction: Hiding the complex implementation details and showing only the necessary and relevant information to the user.
+
+Data Structures are a way of organizing and storing data in a computer so that it can be accessed and modified efficiently. Different kinds of data structures are suited to different kinds of applications, and some are highly specialized to specific tasks. For example, databases use B-tree indexes for fast data retrieval.
+
+Common data structures include:
+- Arrays: A collection of items stored at contiguous memory locations.
+- Linked Lists: A linear collection of data elements where each element points to the next.
+- Stacks: A LIFO (Last In, First Out) data structure.
+- Queues: A FIFO (First In, First Out) data structure.
+- Trees: Hierarchical data structures.
+- Graphs: A collection of nodes (vertices) and edges.

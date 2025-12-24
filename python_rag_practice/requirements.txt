@@ -1,0 +1,6 @@
+langchain-text-splitters
+rank_bm25
+langchain-community
+arxiv
+nltk
+pymupdf
