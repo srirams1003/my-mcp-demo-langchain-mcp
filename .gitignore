@@ -1,8 +1,11 @@
 .DS_Store
 node_modules
+__pycache__
 .env
+nohup.out
 memory.db
 brain.json
 .vectra
+.venv*
 .langgraph_api
 studio_memory.db

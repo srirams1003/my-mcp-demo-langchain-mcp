@@ -3,6 +3,9 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatVertexAI } from "@langchain/google-vertexai";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises"; // Added for file system operations
+import { z } from "zod"; // Added for schema definition
+import { Tool, DynamicStructuredTool } from "@langchain/core/tools"; // Updated: Added DynamicStructuredTool
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,9 +37,46 @@ async function main() {
 		},
 	});
 
+	// --- Custom RAG Tool ---
+	const ragToolDefinitionPath = path.resolve(__dirname, "rag_mcp_tool.json");
+	const ragToolJson = JSON.parse(await fs.readFile(ragToolDefinitionPath, "utf-8"));
+	const ragRetrieverDefinition = ragToolJson.rag_retriever;
+	const retrieveFunctionDefinition = ragRetrieverDefinition.functions.retrieve;
+
+	const ragRetrieve = async ({ query, k }) => {
+		const response = await fetch(retrieveFunctionDefinition.url, {
+			method: retrieveFunctionDefinition.method,
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ query, k }),
+		});
+		if (!response.ok) {
+			throw new Error(`RAG server error: ${response.statusText}`);
+		}
+		const data = await response.json();
+		return JSON.stringify(data.results);
+	};
+
+	const ragTool = new DynamicStructuredTool({ // Changed to DynamicStructuredTool
+		name: "rag_retriever",
+		description: ragRetrieverDefinition.description,
+		schema: {
+			type: "object",
+			properties: {
+				query: { type: "string", description: "The query string to search for in the knowledge base." },
+				k: { type: "number", description: "The number of top relevant chunks to retrieve. Defaults to 4." },
+			},
+			required: ["query"],
+		},
+		func: ragRetrieve,
+	});
+	// --- End Custom RAG Tool ---
+
 	try {
 		console.log("Connecting to MCP servers...");
 		const tools = await client.getTools();
+		tools.push(ragTool); // Add the custom RAG tool to the list
 		console.log(`Connected! Found ${tools.length} tools.`);
 
 		// create a Gemini agent using your GCP Vertex AI (ADC)
@@ -118,6 +158,22 @@ RULES FOR MEMORY:
 		// 	}
 		// });
 		// console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
+
+		console.log("\n--- Testing RAG Agent ---");
+		const ragResponse = await agent.invoke({
+			messages: [{ role: "user", content: "What are programming concepts?" }],
+		});
+		ragResponse.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+				});
+			} 
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+			}
+		});
+		console.log("Final Agent Answer:", ragResponse.messages[ragResponse.messages.length - 1].content);
 
 		console.log("\n--- Testing Memory Agent Recall ---");
 		const memoryResponse2 = await agent.invoke({
