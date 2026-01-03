@@ -12,7 +12,7 @@ from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain.agents.middleware import TodoListMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
-from langchain_core.messages import ToolMessage, AIMessage
+from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
 
 # Import MCP SDK
 from mcp import ClientSession, StdioServerParameters
@@ -90,11 +90,8 @@ class MultiServerMCPClient:
         await self.exit_stack.aclose()
 
 # --- 3. Robust Todo Tool Definition ---
-# We define this strictly so Gemini follows the schema. 
-# The Middleware will detect this existing tool and use it instead of creating a weak default.
 class TodoItem(BaseModel):
     task: str = Field(..., description="The task description")
-    # Relaxed to str to avoid validation errors if model outputs 'Pending' instead of 'pending'
     status: str = Field(..., description="Status: 'pending', 'in_progress', or 'completed'")
 
 class TodoInput(BaseModel):
@@ -133,19 +130,26 @@ async def main():
             description_prefix="⚠️  REVIEW REQUIRED",
         )
         
-        # [STRATEGY]: passing 'write_todos' explicitly in the tool list overrides the
-        # default tool generation inside TodoListMiddleware, ensuring strict types.
+        system_prompt = SystemMessage(content=(
+            "You are a helpful AI assistant connected to various tools including Math, Weather, Memory, and RAG.\n"
+            "You also have a Todo List manager to help plan complex tasks.\n\n"
+            "PROTOCOL:\n"
+            "1. For complex requests involving multiple steps, you MUST use 'write_todos' FIRST to create a plan.\n"
+            "2. As you complete steps, call 'write_todos' again to update the task status to 'completed'.\n"
+            "3. Once all tasks are done, you MUST generate a final natural language response to the user with the answer."
+        ))
+
+        # Explicitly combine tools to ensure strict schema usage
         all_tools = client.tools + [write_todos]
 
         agent = create_agent(
             model=model,
             tools=all_tools, 
-            # Using the actual middleware class as requested
             middleware=[TodoListMiddleware(), hitl_middleware],
             checkpointer=InMemorySaver(),
+            system_prompt=system_prompt 
         )
 
-        # Unique Thread IDs ensure clean context for every test
         print("\n" + "="*50)
         print("--- Testing Math Agent ---")
         await run_interactive(agent, "what's (3 + 5) x 12?", {"configurable": {"thread_id": "test_math"}})
@@ -156,7 +160,7 @@ async def main():
 
         print("\n" + "="*50)
         print("--- Testing Memory Agent Remember ---")
-        await run_interactive(agent, "remember that my favorite color is yellow", {"configurable": {"thread_id": "test_memory"}})
+        await run_interactive(agent, "remember that my favorite color is hot pink", {"configurable": {"thread_id": "test_memory"}})
 
         print("\n" + "="*50)
         print("--- Testing RAG Agent ---")
@@ -167,7 +171,7 @@ async def main():
         await run_interactive(agent, "what is my favorite color?", {"configurable": {"thread_id": "test_memory"}})
 
         print("\n" + "="*50)
-        print("--- Testing Todo List Tool (Complex) ---")
+        print("--- Testing Todo List Tool (Complex - Interactive) ---")
         await run_interactive(agent, "Check the weather in Plano, TX and then multiply the temperature by 2.", {"configurable": {"thread_id": "test_todo"}})
 
     finally:
@@ -183,10 +187,12 @@ async def run_interactive(agent, query, config):
         while "__interrupt__" in response:
             interrupt_data = response["__interrupt__"][0]
             action = interrupt_data.value['action_requests'][0]
+            tool_name = action['name']
             
-            print(f"\n🛑 INTERRUPT: {action['name']}")
-            if action['name'] == 'write_todos':
-                print("📋 Plan Proposed:")
+            print(f"\n🛑 INTERRUPT: Agent wants to call '{tool_name}'")
+            
+            if tool_name == 'write_todos':
+                print("📋 Proposed Plan:")
                 todos = action['args'].get('todos', [])
                 for t in todos:
                     status = t.get('status', '?') if isinstance(t, dict) else t.status
@@ -195,9 +201,31 @@ async def run_interactive(agent, query, config):
             else:
                 print(f"Arguments: {action['args']}")
 
-            # Auto-approve
-            resume = Command(resume={"decisions": [{"type": "approve"}]})
-            response = await agent.ainvoke(resume, config=config)
+            # --- USER INTERACTION ---
+            print("\nOptions:")
+            print("  [y] Approve")
+            print("  [n] Reject / Suggest Changes")
+            
+            choice = input("👉 Your decision: ").strip().lower()
+
+            if choice == 'y':
+                print("✅ Approved.")
+                resume = Command(resume={"decisions": [{"type": "approve"}]})
+                response = await agent.ainvoke(resume, config=config)
+            
+            else: # Treat anything else as reject/change
+                feedback = input("📝 Enter your feedback/changes: ")
+                print(f"❌ Rejected with feedback: '{feedback}'")
+                
+                # We send a REJECT decision with the feedback.
+                # The agent receives this as the result of the tool call and will likely retry.
+                resume = Command(resume={
+                    "decisions": [{
+                        "type": "reject", 
+                        "message": f"User rejected this plan. Feedback: {feedback}"
+                    }]
+                })
+                response = await agent.ainvoke(resume, config=config)
 
         # --- VERBOSE LOGGING ---
         print("\n--- Execution Trace ---")
