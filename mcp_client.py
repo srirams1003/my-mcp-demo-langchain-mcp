@@ -169,8 +169,15 @@ async def main():
         await run_interactive(agent, "what is the weather in Livermore, CA?", config)
 
         print("\n" + "="*50)
-        print("--- Testing Memory Agent ---")
-        await run_interactive(agent, "remember that my favorite color is crimson", config)
+        print("--- Testing Memory Agent Remember ---")
+        await run_interactive(agent, "remember that my favorite color is vermillion", config)
+
+        print("\n" + "="*50)
+        print("--- Testing RAG Agent ---")
+        await run_interactive(agent, "What are programming concepts?", config)
+
+        print("\n" + "="*50)
+        print("--- Testing Memory Agent Recall ---")
         await run_interactive(agent, "what is my favorite color?", config)
 
         print("\n" + "="*50)
