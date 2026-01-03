@@ -9,9 +9,10 @@ from langchain_google_vertexai import ChatVertexAI
 from langchain_core.tools import tool, StructuredTool
 from langchain.agents import create_agent
 from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain.agents.middleware import TodoListMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
-from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
+from langchain_core.messages import ToolMessage, AIMessage
 
 # Import MCP SDK
 from mcp import ClientSession, StdioServerParameters
@@ -21,6 +22,7 @@ load_dotenv()
 
 # --- 1. Helper: Dynamic Schema Conversion ---
 def jsonschema_to_pydantic(schema: dict, model_name: str) -> Type[BaseModel]:
+    """Converts MCP JSON Schema to Pydantic for LangChain/Gemini compatibility."""
     fields = {}
     required_fields = schema.get("required", [])
     properties = schema.get("properties", {})
@@ -88,9 +90,11 @@ class MultiServerMCPClient:
         await self.exit_stack.aclose()
 
 # --- 3. Robust Todo Tool Definition ---
+# We define this strictly so Gemini follows the schema. 
+# The Middleware will detect this existing tool and use it instead of creating a weak default.
 class TodoItem(BaseModel):
     task: str = Field(..., description="The task description")
-    # [FIX] Relaxed 'status' to str to avoid 'Literal' validation errors (e.g. 'Pending' vs 'pending')
+    # Relaxed to str to avoid validation errors if model outputs 'Pending' instead of 'pending'
     status: str = Field(..., description="Status: 'pending', 'in_progress', or 'completed'")
 
 class TodoInput(BaseModel):
@@ -101,6 +105,7 @@ def write_todos(todos: List[TodoItem]):
     """
     Create and manage a list of todo items. 
     ALWAYS use this tool first to plan out the steps.
+    IMPORTANT: After marking the final task as 'completed', you MUST generate a text response to the user with the final answer.
     """
     formatted = "\n".join([f"{i+1}. [{t.status.upper()}] {t.task}" for i, t in enumerate(todos)])
     return f"Current Plan:\n{formatted}"
@@ -128,28 +133,19 @@ async def main():
             description_prefix="⚠️  REVIEW REQUIRED",
         )
         
-        # [FIX] Enhanced System Prompt
-        # Explicitly telling the agent it is a helpful assistant AND giving Todo rules.
-        # This prevents the Agent from losing its ability to "chat".
-        system_prompt = SystemMessage(content=(
-            "You are a helpful AI assistant connected to various tools including Math, Weather, Memory, and RAG.\n"
-            "You also have a Todo List manager to help plan complex tasks.\n\n"
-            "PROTOCOL:\n"
-            "1. For complex requests involving multiple steps, you MUST use 'write_todos' FIRST to create a plan.\n"
-            "2. As you complete steps, call 'write_todos' again to update the task status to 'completed'.\n"
-            "3. Once all tasks are done, you MUST generate a final natural language response to the user with the answer."
-        ))
-
+        # [STRATEGY]: passing 'write_todos' explicitly in the tool list overrides the
+        # default tool generation inside TodoListMiddleware, ensuring strict types.
         all_tools = client.tools + [write_todos]
 
         agent = create_agent(
             model=model,
             tools=all_tools, 
-            middleware=[hitl_middleware],
+            # Using the actual middleware class as requested
+            middleware=[TodoListMiddleware(), hitl_middleware],
             checkpointer=InMemorySaver(),
-            system_prompt=system_prompt 
         )
 
+        # Unique Thread IDs ensure clean context for every test
         print("\n" + "="*50)
         print("--- Testing Math Agent ---")
         await run_interactive(agent, "what's (3 + 5) x 12?", {"configurable": {"thread_id": "test_math"}})
@@ -160,7 +156,7 @@ async def main():
 
         print("\n" + "="*50)
         print("--- Testing Memory Agent Remember ---")
-        await run_interactive(agent, "remember that my favorite color is hot pink", {"configurable": {"thread_id": "test_memory"}})
+        await run_interactive(agent, "remember that my favorite color is yellow", {"configurable": {"thread_id": "test_memory"}})
 
         print("\n" + "="*50)
         print("--- Testing RAG Agent ---")
@@ -225,8 +221,6 @@ async def run_interactive(agent, query, config):
         
         if not content:
             print("\nFinal Answer: [Agent returned no text. Check Execution Trace above.]")
-            # Debugging: Print raw message to see if it was a safety filter or tool error
-            print(f"(Debug Raw Message: {last_msg})")
         elif isinstance(content, list):
             text_parts = [block.get('text', '') for block in content if 'text' in block]
             print(f"\nFinal Answer: {' '.join(text_parts)}")
