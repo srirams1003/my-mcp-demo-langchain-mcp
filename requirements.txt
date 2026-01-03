@@ -4,3 +4,5 @@ langchain-google-vertexai
 langchain-core 
 mcp 
 pydantic
+langchain 
+python-dotenv
