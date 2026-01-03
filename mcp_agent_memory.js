@@ -8,9 +8,28 @@ import path from "path";
 import { fileURLToPath } from "url";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { z } from "zod"; // Added for schema definition
+import { Tool, DynamicStructuredTool } from "@langchain/core/tools"; // Updated: Added DynamicStructuredTool
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const todoTool = new DynamicStructuredTool({
+    name: "write_todos",
+    description: "Create and manage a list of todo items. ALWAYS use this tool first to plan out the steps for complex user requests, and use it again to update the status of tasks as you complete them.",
+    schema: z.object({
+        todos: z.array(z.object({
+            task: z.string().describe("The description of the task to be done"),
+            status: z.enum(["pending", "in_progress", "completed"]).describe("The current status of the task"),
+        })).describe("The list of tasks representing the plan"),
+    }),
+    func: async ({ todos }) => {
+        // By returning the stringified list, we inject the current state of the plan
+        // back into the chat history so the agent 'remembers' it for the next step.
+        const formatted = todos.map((t, i) => `${i + 1}. [${t.status.toUpperCase()}] ${t.task}`).join("\n");
+        return `Current Plan:\n${formatted}`;
+    },
+});
 
 async function main() {
 	const mathServerPath = path.resolve(__dirname, "math_server.js");
@@ -41,7 +60,9 @@ async function main() {
 
 	try {
 		console.log("Connecting to MCP servers...");
-		const tools = await client.getTools();
+		const mcpTools = await client.getTools();
+		// combine mcp tools with the new todo tool
+        const tools = [...mcpTools, todoTool];
 		console.log(`Connected! Found ${tools.length} tools.`);
 
 		// // 2. Initialize the Checkpointer (In-Memory Database) - short term memory
@@ -62,14 +83,18 @@ async function main() {
 			tools,
 			checkpointSaver: checkpointer, // <--- 3. Inject Memory Here
 			// System Prompt to teach the Agent about Memory
-			stateModifier: `You are a helpful AI assistant with access to a Long-Term Memory.
+			stateModifier: `You are a helpful AI assistant with access to a Long-Term Memory and a Todo List manager.
 
 RULES FOR MEMORY:
 1. If the user tells you a fact, use 'remember_fact' to save it.
-2. If you find CONFLICTING memories (e.g. "Favorite animal is dog" vs "cat"), trust the entry with the MOST RECENT timestamp.
-3. If the user asks a question that relies on past context (e.g. "What is the weather at my home?"), use 'recall_facts' to find that information first.
-4. Do not ask the user for information you already have.
-5. CRITICAL: If the 'recall_facts' tool returns information that CONFLICTS with earlier parts of this conversation, TRUST THE TOOL. The tool contains the most up-to-date truth, even if I said something different earlier in this chat.`,
+2. If you find CONFLICTING memories, trust the entry with the MOST RECENT timestamp.
+3. If the user asks a question relying on past context, use 'recall_facts' first.
+4. If 'recall_facts' conflicts with earlier conversation, TRUST THE TOOL.
+
+RULES FOR PLANNING (TODO LIST):
+1. For any complex request (requiring multiple steps or tools), you MUST use 'write_todos' FIRST to create a plan.
+2. As you complete steps, call 'write_todos' again to update the specific task's status to 'completed'.
+3. Do not assume tasks are done until you have confirmed the output of the relevant tool.`,
 		});
 
 		// 4. Interactive Chat Loop
