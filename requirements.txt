@@ -1,0 +1,6 @@
+langchain-mcp-adapters 
+langgraph 
+langchain-google-vertexai 
+langchain-core 
+mcp 
+pydantic
