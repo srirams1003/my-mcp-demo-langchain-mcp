@@ -16,6 +16,7 @@ async function main() {
 	const weatherServerPath = path.resolve(__dirname, "typescript-weather-mcp-server/build/index.js");
 
 	const ragServerPath = path.resolve(__dirname, "rag_server.py");
+	const todoServerPath = path.resolve(__dirname, "todo_list_tool.py");
 
 	const client = new MultiServerMCPClient({
 		math: {
@@ -37,6 +38,11 @@ async function main() {
 			transport: "stdio",
 			command: "bash",
 			args: ["-c", `source mcp-rag-env/bin/activate && python "${ragServerPath}"`],
+		},
+		todo: {
+			transport: "stdio",
+			command: "bash",
+			args: ["-c", `source mcp-rag-env/bin/activate && python "${todoServerPath}"`],
 		},
 	});
 
@@ -109,21 +115,21 @@ RULES FOR MEMORY:
 		// Final Answer
 		console.log("Final Agent Answer:", weatherResponse.messages[weatherResponse.messages.length - 1].content);
 
-		// console.log("\n--- Testing Memory Agent Store ---");
-		// const memoryResponse1 = await agent.invoke({
-		// 	messages: [{ role: "user", content: "remember that my favorite color is crimson" }],
-		// });
-		// memoryResponse1.messages.forEach((msg, index) => {
-		// 	if (msg.tool_calls && msg.tool_calls.length > 0) {
-		// 		msg.tool_calls.forEach(tc => {
-		// 			console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
-		// 		});
-		// 	} 
-		// 	else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
-		// 		console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
-		// 	}
-		// });
-		// console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
+		console.log("\n--- Testing Memory Agent Store ---");
+		const memoryResponse1 = await agent.invoke({
+			messages: [{ role: "user", content: "remember that my favorite color is crimson" }],
+		});
+		memoryResponse1.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+				});
+			} 
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+			}
+		});
+		console.log("Final Agent Answer:", memoryResponse1.messages[memoryResponse1.messages.length - 1].content);
 
 		console.log("\n--- Testing RAG Agent ---");
 		const ragResponse = await agent.invoke({
@@ -156,6 +162,22 @@ RULES FOR MEMORY:
 			}
 		});
 		console.log("Final Agent Answer:", memoryResponse2.messages[memoryResponse2.messages.length - 1].content);
+
+		console.log("\n--- Testing Todo Agent ---");
+		const todoResponse = await agent.invoke({
+			messages: [{ role: "user", content: "add a todo to buy milk" }],
+		});
+		todoResponse.messages.forEach((msg, index) => {
+			if (msg.tool_calls && msg.tool_calls.length > 0) {
+				msg.tool_calls.forEach(tc => {
+					console.log(`[Step ${index}] 🛠️ Agent called tool: ${tc.name} (${JSON.stringify(tc.args)})`);
+				});
+			}
+			else if (msg.constructor.name === 'ToolMessage' || msg._getType() === 'tool') {
+				console.log(`[Step ${index}] ✅ MCP Server returned: ${msg.content}`);
+			}
+		});
+		console.log("Final Agent Answer:", todoResponse.messages[todoResponse.messages.length - 1].content);
 
 
 	} catch (error) {
