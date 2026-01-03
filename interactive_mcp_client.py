@@ -12,7 +12,7 @@ from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain.agents.middleware import TodoListMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
-from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
+from langchain_core.messages import SystemMessage, ToolMessage, AIMessage, HumanMessage
 
 # Import MCP SDK
 from mcp import ClientSession, StdioServerParameters
@@ -107,7 +107,7 @@ def write_todos(todos: List[TodoItem]):
     formatted = "\n".join([f"{i+1}. [{t.status.upper()}] {t.task}" for i, t in enumerate(todos)])
     return f"Current Plan:\n{formatted}"
 
-# --- 4. Main ---
+# --- 4. Main REPL ---
 async def main():
     base_dir = os.getcwd() 
     math_server = os.path.join(base_dir, "math_server.js")
@@ -139,7 +139,6 @@ async def main():
             "3. Once all tasks are done, you MUST generate a final natural language response to the user with the answer."
         ))
 
-        # Explicitly combine tools to ensure strict schema usage
         all_tools = client.tools + [write_todos]
 
         agent = create_agent(
@@ -151,36 +150,39 @@ async def main():
         )
 
         print("\n" + "="*50)
-        print("--- Testing Math Agent ---")
-        await run_interactive(agent, "what's (3 + 5) x 12?", {"configurable": {"thread_id": "test_math"}})
+        print("🤖 MCP Agent REPL Started")
+        print("Type 'exit' or 'quit' to stop.")
+        print("="*50 + "\n")
 
-        print("\n" + "="*50)
-        print("--- Testing Weather Agent ---")
-        await run_interactive(agent, "what is the weather in Livermore, CA?", {"configurable": {"thread_id": "test_weather"}})
+        # REPL Loop
+        # We reuse the same thread_id so the bot remembers context across inputs!
+        config = {"configurable": {"thread_id": "repl_session_v1"}}
 
-        print("\n" + "="*50)
-        print("--- Testing Memory Agent Remember ---")
-        await run_interactive(agent, "remember that my favorite color is yellow", {"configurable": {"thread_id": "test_memory"}})
+        while True:
+            try:
+                user_input = input("\nUser: ").strip()
+                if user_input.lower() in ["exit", "quit"]:
+                    print("Goodbye!")
+                    break
+                
+                if not user_input:
+                    continue
 
-        print("\n" + "="*50)
-        print("--- Testing RAG Agent ---")
-        await run_interactive(agent, "what are programming concepts?", {"configurable": {"thread_id": "test_rag"}})
+                await run_interactive(agent, user_input, config)
 
-        print("\n" + "="*50)
-        print("--- Testing Memory Agent Recall ---")
-        await run_interactive(agent, "what is my favorite color?", {"configurable": {"thread_id": "test_memory"}})
-
-        print("\n" + "="*50)
-        print("--- Testing Todo List Tool (Complex - Interactive) ---")
-        await run_interactive(agent, "Check the weather in Plano, TX and then multiply the temperature by 2.", {"configurable": {"thread_id": "test_todo"}})
+            except KeyboardInterrupt:
+                print("\nGoodbye!")
+                break
+            except Exception as e:
+                print(f"❌ Error: {e}")
 
     finally:
         print("\nClosing MCP connections...")
         await client.cleanup()
 
 async def run_interactive(agent, query, config):
-    print(f"User: '{query}'")
     try:
+        # Stream/invoke on the SAME config to preserve history
         response = await agent.ainvoke({"messages": [{"role": "user", "content": query}]}, config=config)
 
         # HITL Loop
@@ -213,12 +215,9 @@ async def run_interactive(agent, query, config):
                 resume = Command(resume={"decisions": [{"type": "approve"}]})
                 response = await agent.ainvoke(resume, config=config)
             
-            else: # Treat anything else as reject/change
+            else: 
                 feedback = input("📝 Enter your feedback/changes: ")
                 print(f"❌ Rejected with feedback: '{feedback}'")
-                
-                # We send a REJECT decision with the feedback.
-                # The agent receives this as the result of the tool call and will likely retry.
                 resume = Command(resume={
                     "decisions": [{
                         "type": "reject", 
@@ -227,13 +226,24 @@ async def run_interactive(agent, query, config):
                 })
                 response = await agent.ainvoke(resume, config=config)
 
-        # --- VERBOSE LOGGING ---
+        # --- VERBOSE LOGGING (Cleaned) ---
         print("\n--- Execution Trace ---")
         messages = response['messages']
-        for i, msg in enumerate(messages):
+        
+        # 1. Find the index of the LAST user message
+        last_human_idx = -1
+        for i in range(len(messages) - 1, -1, -1):
+            if isinstance(messages[i], HumanMessage):
+                last_human_idx = i
+                break
+        
+        # 2. Slice to show only messages generated *after* that input
+        recent_activity = messages[last_human_idx + 1:] if last_human_idx != -1 else messages
+
+        for i, msg in enumerate(recent_activity):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 for tc in msg.tool_calls:
-                    print(f"[Step {i}] 🛠️ Agent called tool: {tc['name']} ({tc['args']})")
+                    print(f"[Step {i+1}] 🛠️ Agent called tool: {tc['name']} ({tc['args']})")
             
             elif isinstance(msg, ToolMessage):
                 content = msg.content
@@ -241,14 +251,14 @@ async def run_interactive(agent, query, config):
                     content = " ".join([c.get('text', '') for c in content if isinstance(c, dict) and 'text' in c])
                 
                 display_content = (content[:150] + '...') if len(content) > 150 else content
-                print(f"[Step {i}] ✅ MCP Server returned: {display_content}")
+                print(f"[Step {i+1}] ✅ MCP Server returned: {display_content}")
 
         # Final Answer
         last_msg = response['messages'][-1]
         content = last_msg.content
         
         if not content:
-            print("\nFinal Answer: [Agent returned no text. Check Execution Trace above.]")
+            print("\nFinal Answer: [Agent completed tasks but returned no text.]")
         elif isinstance(content, list):
             text_parts = [block.get('text', '') for block in content if 'text' in block]
             print(f"\nFinal Answer: {' '.join(text_parts)}")
