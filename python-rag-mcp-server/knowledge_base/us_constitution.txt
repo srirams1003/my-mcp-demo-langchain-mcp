@@ -1,0 +1,15 @@
+The U.S. Constitution begins with the words "We the People" and is composed of a Preamble, seven articles, and 27 amendments. The first 10 amendments are known as the Bill of Rights.
+
+The Preamble reads:
+"We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America."
+
+The seven articles outline the structure of the government:
+*   **Article I:** Legislative Branch
+*   **Article II:** Executive Branch
+*   **Article III:** Judicial Branch
+*   **Article IV:** States, Citizenship, New States
+*   **Article V:** Amendment Process
+*   **Article VI:** Debts, Supremacy, Oaths, Religious Tests
+*   **Article VII:** Ratification
+
+There have been 27 amendments to the Constitution, with the Bill of Rights (the first 10 amendments) ratified on December 15, 1791.

@@ -2,116 +2,22 @@
 
 This project demonstrates a couple of multi-tool agents built with LangChain.js, LangGraph.js, and the Model-Context-Protocol (MCP). The agents in these files can interact with multiple independent MCP servers that provide tools for different functionalities.
 
-## Project Overview
+## Directory Structure
 
-This repository contains a collection of Node.js scripts that showcase how to build and interact with MCP servers. These servers provide tools for:
+This repository is organized into the following subdirectories:
 
-*   **Math:** Adding and multiplying numbers.
-*   **Weather:** Getting the weather for a location.
-*   **Memory:** Storing and recalling facts.
-*   **Git:** Checking the status, diff, and log of a Git repository.
-
-The agent is built using LangGraph.js and can be connected to Langsmith Studio for debugging and tracing.
+*   `javascript-mcp-and-agents/`: Contains Node.js scripts for MCP servers and agents.
+*   `langsmith-studio-integration/`: Contains a LangGraph.js agent integrated with Langsmith Studio.
+*   `python-mcp-clients-and-agents/`: Contains Python scripts for MCP clients and agents.
+*   `python-rag-mcp-server/`: Contains a Python-based MCP server for a RAG pipeline.
+*   `python-system-info-mcp-server/`: Contains a Python-based MCP server for system information.
+*   `python_rag_practice/`: Contains Python scripts for practicing with RAG.
+*   `typescript-weather-mcp-server/`: Contains a TypeScript-based MCP server for weather information.
 
 ## Setup
 
-1.  **Install Dependencies:**
-    ```sh
-    npm install
-    ```
+Please refer to the `README.md` file in each subdirectory for specific setup instructions. Generally, you will need to have Node.js and Python installed on your system.
 
-2.  **Set up Environment Variables:**
-    ```sh
-    cp .env.example .env
-    ```
-    You will need to add your Gemini API key to the `.env` file.
+## Usage
 
-## Available Scripts
-
-### `math_server.js`
-
-This script starts an MCP server that provides `add` and `multiply` tools. The server communicates over stdio.
-
-**To run:**
-```sh
-node math_server.js
-```
-
-### `memory_server.js`
-
-This script starts an MCP server that provides `remember_fact` and `recall_facts` tools. The server communicates over stdio and uses a local vector store (`.vectra`) and a JSON file (`brain.json`) for persistence.
-
-**To run:**
-```sh
-node memory_server.js
-```
-
-### `git_server.js`
-
-This script starts an MCP server that provides `git_status`, `git_diff`, and `git_log` tools. The server communicates over stdio.
-
-**To run:**
-```sh
-node git_server.js
-```
-
-### `multi_server_mcp_client.js`
-
-This script is a command-line client that connects to the `math`, `weather`, and `memory` servers. It demonstrates how to use the tools provided by these servers by running a few tests.
-
-**To run:**
-```sh
-node multi_server_mcp_client.js
-```
-
-### `mcp_agent_memory.js`
-
-This script creates an interactive command-line agent that connects to the `math`, `weather`, and `memory` servers. The agent uses a local SQLite database (`memory.db`) for long-term memory.
-
-**To run:**
-```sh
-node mcp_agent_memory.js
-```
-
-### `weather_server.js`
-
-This script starts an MCP server that provides a `get_weather` tool. The server runs on `http://localhost:8000` and it uses the SSE transport method.
-
-**To run:**
-```sh
-node weather_server.js
-```
-
-### `concatenate_string_mcp_server.js`
-
-This script starts an MCP server that provides a `concatenate_two_strings` tool. The server runs on `http://localhost:3000` and it uses the "Streamable HTTP" transport method. This is a more robust alternative to the SSE transport method (which is now considered legacy by many devs) as it uses a single POST endpoint for the entire session.
-
-**To run:**
-```sh
-node concatenate_string_mcp_server.js
-```
-
-### `agent_graph.js`
-
-This script defines a LangGraph agent that connects to the `math`, `weather`, and `memory` servers. This is the entry point for Langsmith Studio integration.
-
-## Langsmith Studio Integration
-
-Langsmith Studio allows you to debug, trace, and visualize your LangGraph agents. To use it with this project, you can use the `langgraphjs dev` command.
-
-0. **Install the `langgraphjs` CLI tool globally**
-    ```sh
-    npm install -g @langchain/langgraph-cli
-
-    ```
-
-1.  **Start the LangGraph development server:**
-    ```sh
-    langgraphjs dev
-    ```
-    This command will start a development server that watches for changes in your `agent_graph.js` file and provides a UI for interacting with your agent.
-
-2.  **Open Langsmith Studio:**
-    The command will output a URL to the Langsmith Studio UI. Open this URL in your browser to start interacting with your agent.
-
-
+Each subdirectory contains its own `README.md` file with detailed instructions on how to run the scripts and use the tools provided.

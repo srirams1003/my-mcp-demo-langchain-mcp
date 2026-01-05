@@ -1,0 +1,9 @@
+langchain-mcp-adapters 
+langgraph 
+langchain-google-vertexai 
+langchain-core 
+mcp 
+pydantic
+langchain 
+python-dotenv
+langgraph-checkpoint-sqlite

@@ -34,7 +34,7 @@ const todoTool = new DynamicStructuredTool({
 async function main() {
 	const mathServerPath = path.resolve(__dirname, "math_server.js");
 	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
-	const weatherServerPath = path.resolve(__dirname, "typescript-weather-mcp-server/build/index.js");
+	const weatherServerPath = path.resolve(__dirname, "../typescript-weather-mcp-server/build/index.js");
 
 	const client = new MultiServerMCPClient({
 		math: {

@@ -11,20 +11,51 @@ FAISS_INDEX_PATH = "faiss_index/knowledge_base.faiss"
 FAISS_METADATA_PATH = "faiss_index/knowledge_base_metadata.json"
 TFIDF_VECTORIZER_PATH = "faiss_index/tfidf_vectorizer.joblib"
 
-def simple_text_splitter(text, chunk_size=500, chunk_overlap=50):
+import nltk
+from nltk.tokenize import sent_tokenize
+
+def sentence_splitter(text, min_chars=100, max_chars=500):
     """
-    A simpler text splitter.
+    Splits text into sentences and then groups sentences into chunks.
+    Ensures each chunk has a minimum character count.
     """
-    words = text.split()
+    sentences = sent_tokenize(text)
     chunks = []
-    i = 0
-    while i < len(words):
-        chunk_words = words[i : i + chunk_size]
-        chunks.append(" ".join(chunk_words))
-        i += chunk_size - chunk_overlap
-        if i >= len(words) - chunk_overlap and len(chunk_words) > 0 and (i - (chunk_size - chunk_overlap)) < len(words):
-            break
-    return [chunk for chunk in chunks if chunk.strip()]
+    current_chunk = []
+    current_length = 0
+
+    for sentence in sentences:
+        sentence_length = len(sentence)
+        if current_length + sentence_length + (len(current_chunk) * 1) > max_chars and current_chunk: # +1 for space
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [sentence]
+            current_length = sentence_length
+        else:
+            current_chunk.append(sentence)
+            current_length += sentence_length
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    # Further refine to ensure minimum character count
+    final_chunks = []
+    buffer_chunk = ""
+    for chunk in chunks:
+        if len(buffer_chunk) + len(chunk) < min_chars:
+            buffer_chunk += (" " if buffer_chunk else "") + chunk
+        else:
+            if buffer_chunk:
+                final_chunks.append(buffer_chunk)
+            buffer_chunk = chunk
+
+    if buffer_chunk: # Add any remaining buffer
+        final_chunks.append(buffer_chunk)
+
+    # If all chunks are too small, combine them into one
+    if not final_chunks and text.strip():
+        final_chunks.append(text.strip())
+
+    return final_chunks
 
 def create_faiss_index():
     print("Step 1: Loading documents...")
@@ -37,7 +68,7 @@ def create_faiss_index():
     print("Step 1 Complete: Documents loaded.")
 
     print("Step 2: Splitting documents into chunks...")
-    chunks = simple_text_splitter(all_text)
+    chunks = sentence_splitter(all_text)
     print(f"Step 2 Complete: Split into {len(chunks)} chunks.")
 
     print("Step 3: Initializing and fitting TF-IDF Vectorizer...")

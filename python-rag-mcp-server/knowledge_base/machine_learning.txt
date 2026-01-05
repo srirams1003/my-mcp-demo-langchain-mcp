@@ -1,0 +1,28 @@
+Machine learning (ML) is a subset of artificial intelligence (AI) that enables computer systems to learn and improve from data without being explicitly programmed. Instead of following rigid, predefined instructions, ML algorithms analyze data, identify patterns, and make predictions or decisions, continually adjusting and enhancing their performance over time.
+
+**How Machine Learning Works**
+The process of machine learning typically involves several key steps:
+1.  **Data Collection:** Gathering relevant data for the machine to learn from.
+2.  **Data Preprocessing:** Cleaning and transforming raw data into a format that the ML algorithm can understand. This includes handling missing values, normalizing data, or encoding text into numerical formats.
+3.  **Model Training:** The chosen ML algorithm analyzes the preprocessed data to identify patterns and relationships. It iteratively adjusts its internal parameters to minimize the difference between its predictions and the actual outcomes in the training data.
+4.  **Evaluation and Refinement:** After training, the model's performance is evaluated. It may be fine-tuned or adjusted to enhance its accuracy.
+5.  **Prediction or Decision-Making:** The trained model can then be used to make predictions or recommend decisions on new, unseen data.
+
+**Types of Machine Learning**
+Machine learning methods are generally categorized into three main paradigms based on the nature of their training objectives and data:
+*   **Supervised Learning:** This is the most common type, where the algorithm is trained on a "labeled" dataset, meaning both the input data and the corresponding correct output are provided. The model learns to predict the output for new, unseen inputs. Examples include classification (e.g., identifying spam email) and regression (e.g., predicting house prices).
+*   **Unsupervised Learning:** In this approach, the algorithm works with "unlabeled" data, seeking to find intrinsic patterns, structures, or relationships within the data without explicit guidance. It's used for tasks like clustering (grouping similar data points) and anomaly detection.
+*   **Reinforcement Learning:** An agent learns to perform a task through trial and error by interacting with an environment. It receives rewards for desirable actions and penalties for undesirable ones, aiming to maximize its cumulative reward over time.
+
+**Applications of Machine Learning**
+Machine learning powers many technologies in our daily lives, including:
+*   Product recommendations on e-commerce sites and streaming platforms.
+*   Facial recognition technology.
+*   Email filtering.
+*   Autonomous vehicles.
+*   Medical diagnosis based on images.
+
+**Machine Learning vs. AI vs. Deep Learning**
+*   **Artificial Intelligence (AI)** is a broad field aiming to create intelligent machines that can mimic human capabilities like learning, reasoning, and problem-solving.
+*   **Machine Learning (ML)** is a subfield of AI that focuses on algorithms that learn from data.
+*   **Deep Learning** is a specialized form of machine learning that uses large artificial neural networks to process vast amounts of data, often achieving state-of-the-art results in areas like image and speech recognition.

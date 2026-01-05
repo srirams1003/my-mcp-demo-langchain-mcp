@@ -5,6 +5,7 @@ import json
 import joblib
 from mcp.server.fastmcp import FastMCP
 from sklearn.feature_extraction.text import TfidfVectorizer
+from typing import Optional  # <--- ADD THIS LINE
 
 # Configuration (must match create_faiss_index.py)
 FAISS_INDEX_PATH = "faiss_index/knowledge_base.faiss"
@@ -54,12 +55,12 @@ def load_rag_resources():
 
 # 2. Define a TOOL (Function the Agent can call)
 @mcp.tool()
-def search_knowledge_base(query: str, k: int = 3) -> str:
+def search_knowledge_base(query: str, k: Optional[int] = 3) -> str:
     """
     Searches the knowledge base for top-k relevant chunks based on the query.
     Args:
         query (str): The user's query.
-        k (int): The number of top-k relevant chunks to retrieve.
+        k (int): The number of top-k relevant chunks to retrieve. Defaults to 3.
     Returns:
         str: A formatted string containing the retrieved knowledge chunks.
     """
@@ -69,6 +70,12 @@ def search_knowledge_base(query: str, k: int = 3) -> str:
         return "Knowledge base not fully loaded. Check server startup logs."
 
     # print(f"Searching knowledge base for query: '{query}' with k={k}")
+
+    # Handle the case where k is explicitly passed as None
+    if k is None:
+        k = 3
+    # Ensure k is an integer
+    k = int(k)
 
     # Transform the query using the loaded TF-IDF vectorizer
     # Ensure the vectorizer is fitted with some vocabulary, otherwise transform will fail
