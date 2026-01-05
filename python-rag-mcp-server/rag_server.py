@@ -59,7 +59,7 @@ def search_knowledge_base(query: str, k: int = 3) -> str:
     Searches the knowledge base for top-k relevant chunks based on the query.
     Args:
         query (str): The user's query.
-        k (int): The number of top-k relevant chunks to retrieve.
+        k (int): The number of top-k relevant chunks to retrieve. Defaults to 3.
     Returns:
         str: A formatted string containing the retrieved knowledge chunks.
     """
@@ -69,6 +69,9 @@ def search_knowledge_base(query: str, k: int = 3) -> str:
         return "Knowledge base not fully loaded. Check server startup logs."
 
     # print(f"Searching knowledge base for query: '{query}' with k={k}")
+
+    # Ensure k is an integer
+    k = int(k)
 
     # Transform the query using the loaded TF-IDF vectorizer
     # Ensure the vectorizer is fitted with some vocabulary, otherwise transform will fail
