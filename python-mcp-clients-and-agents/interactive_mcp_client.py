@@ -1,7 +1,7 @@
 import asyncio
 import os
 from contextlib import AsyncExitStack
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Any
 from pydantic import BaseModel, Field, create_model
 
 from dotenv import load_dotenv
@@ -36,7 +36,13 @@ def jsonschema_to_pydantic(schema: dict, model_name: str) -> Type[BaseModel]:
         elif t == "array": field_type = list
         elif t == "object": field_type = dict
         
-        default = ... if field_name in required_fields else None
+        # --- FIX START ---
+        if field_name not in required_fields:
+            field_type = Optional[field_type]
+            default = None
+        else:
+            default = ...
+        # --- FIX END ---
         fields[field_name] = (field_type, Field(default=default, description=field_def.get("description")))
 
     return create_model(model_name, **fields)
