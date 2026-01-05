@@ -30,9 +30,9 @@ const todoTool = new DynamicStructuredTool({
 async function main() {
 	const mathServerPath = path.resolve(__dirname, "math_server.js");
 	const memoryServerPath = path.resolve(__dirname, "memory_server.js");
-	const weatherServerPath = path.resolve(__dirname, "typescript-weather-mcp-server/build/index.js");
+	const weatherServerPath = path.resolve(__dirname, "../typescript-weather-mcp-server/build/index.js");
 
-	const ragServerPath = path.resolve(__dirname, "rag_server.py");
+	const ragServerPath = path.resolve(__dirname, "../python-rag-mcp-server/rag_server.py");
 
 	const client = new MultiServerMCPClient({
 		math: {
@@ -53,7 +53,7 @@ async function main() {
 		rag: {
 			transport: "stdio",
 			command: "bash",
-			args: ["-c", `source mcp-rag-env/bin/activate && python "${ragServerPath}"`],
+			args: ["-c", `source ../python-rag-mcp-server/mcp-rag-env/bin/activate && python "${ragServerPath}"`],
 		},
 	});
 

@@ -9,9 +9,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. Setup Paths
-const mathServerPath = path.resolve(__dirname, "math_server.js");
-const memoryServerPath = path.resolve(__dirname, "memory_server.js");
-const weatherServerPath = path.resolve("/Users/sriramsuresh/terralogic/my-mcp-demo-modelcontextprotocol.io-typescript/build/index.js");
+const mathServerPath = path.resolve(__dirname, "../javascript-mcp-and-agents/math_server.js");
+const memoryServerPath = path.resolve(__dirname, "../javascript-mcp-and-agents/memory_server.js");
+const weatherServerPath = path.resolve("../typescript-weather-mcp-server/build/index.js");
 
 // 2. Initialize Client
 const client = new MultiServerMCPClient({

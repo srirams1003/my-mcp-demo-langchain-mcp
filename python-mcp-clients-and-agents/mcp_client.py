@@ -110,11 +110,11 @@ def write_todos(todos: List[TodoItem]):
 # --- 4. Main ---
 async def main():
     base_dir = os.getcwd() 
-    math_server = os.path.join(base_dir, "math_server.js")
-    memory_server = os.path.join(base_dir, "memory_server.js")
-    weather_server = os.path.join(base_dir, "typescript-weather-mcp-server", "build", "index.js")
-    rag_server = os.path.join(base_dir, "rag_server.py")
-    venv_python = os.path.join(base_dir, "mcp-rag-env", "bin", "python")
+    math_server = os.path.join(base_dir, "../javascript-mcp-and-agents/math_server.js")
+    memory_server = os.path.join(base_dir, "../javascript-mcp-and-agents/memory_server.js")
+    weather_server = os.path.join(base_dir, "../typescript-weather-mcp-server", "build", "index.js")
+    rag_server = os.path.join(base_dir, "../python-rag-mcp-server/rag_server.py")
+    venv_python = os.path.join(base_dir, "../python-rag-mcp-server/mcp-rag-env", "bin", "python")
 
     client = MultiServerMCPClient()
     try:

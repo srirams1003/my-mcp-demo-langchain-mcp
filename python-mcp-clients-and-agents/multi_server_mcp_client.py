@@ -85,10 +85,10 @@ async def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Define Paths
-    math_server_path = os.path.join(current_dir, "math_server.js")
-    memory_server_path = os.path.join(current_dir, "memory_server.js")
-    weather_server_path = os.path.join(current_dir, "typescript-weather-mcp-server/build/index.js")
-    rag_server_path = os.path.join(current_dir, "rag_server.py")
+    math_server_path = os.path.join(current_dir, "../javascript-mcp-and-agents/math_server.js")
+    memory_server_path = os.path.join(current_dir, "../javascript-mcp-and-agents/memory_server.js")
+    weather_server_path = os.path.join(current_dir, "../typescript-weather-mcp-server/build/index.js")
+    rag_server_path = os.path.join(current_dir, "../python-rag-mcp-server/rag_server.py")
 
     # Define Server Configs
     mcp_config = {
@@ -106,7 +106,7 @@ async def main():
         },
         "rag": {
             "command": "bash",
-            "args": ["-c", f'source mcp-rag-env/bin/activate && python "{rag_server_path}"'],
+            "args": ["-c", f'source ../python-rag-mcp-server/mcp-rag-env/bin/activate && python "{rag_server_path}"'],
         },
     }
 
