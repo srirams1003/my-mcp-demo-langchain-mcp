@@ -6,3 +6,4 @@ mcp
 pydantic
 langchain 
 python-dotenv
+langgraph-checkpoint-sqlite

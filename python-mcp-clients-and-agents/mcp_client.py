@@ -48,9 +48,9 @@ class MultiServerMCPClient:
         self.sessions = []
         self.tools = []
 
-    async def connect_server(self, name: str, command: str, args: List[str], env: Optional[dict] = None):
+    async def connect_server(self, name: str, command: str, args: List[str], cwd: Optional[str] = None, env: Optional[dict] = None):
         print(f"🔌 Connecting to {name} server...")
-        server_params = StdioServerParameters(command=command, args=args, env={**os.environ, **(env or {})})
+        server_params = StdioServerParameters(command=command, args=args, cwd=cwd, env={**os.environ, **(env or {})})
 
         try:
             read, write = await self.exit_stack.enter_async_context(stdio_client(server_params))
@@ -121,7 +121,8 @@ async def main():
         await client.connect_server("math", "node", [math_server])
         await client.connect_server("weather", "node", [weather_server])
         await client.connect_server("memory", "node", [memory_server])
-        await client.connect_server("rag", venv_python, [rag_server])
+        rag_server_dir = os.path.join(base_dir, "../python-rag-mcp-server")
+        await client.connect_server("rag", venv_python, [rag_server], cwd=rag_server_dir)
 
         model = ChatVertexAI(model="gemini-2.5-flash", temperature=0)
 
